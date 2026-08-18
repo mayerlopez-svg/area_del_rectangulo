@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelo de Áreas para Factorización</title>
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --primary: #3b82f6;
+      --border-color: #e2e8f0;
+      
+      /* Colores de las fichas */
+      --color-a2: #3b82f6;    /* Azul para a² */
+      --color-a: #10b981;     /* Verde para a */
+      --color-1: #f59e0b;     /* Amarillo para 1 */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--border-color);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .poly-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .poly-input input {
+      width: 60px;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .poly-input input:focus {
+      outline: 2px solid var(--primary);
+      border-color: transparent;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+
+    .tiles-count {
+      margin-top: 20px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 16px;
+    }
+
+    .tiles-count h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .tile-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .badge-a2 { background-color: #dbeafe; color: #1e40af; }
+    .badge-a  { background-color: #d1fae5; color: #065f46; }
+    .badge-1  { background-color: #fef3c7; color: #92400e; }
+
+    /* Estilos para la visualización gráfica */
+    .viewport {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      position: relative;
+    }
+
+    .result-message {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      width: 100%;
+    }
+
+    .success-msg {
+      background-color: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .error-msg {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    /* Diagrama del rectángulo y etiquetas de dimensión */
+    .rectangle-wrapper {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+      margin: 20px 0;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .label-top {
+      grid-column: 2;
+      grid-row: 1;
+      font-weight: bold;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .label-left {
+      grid-column: 1;
+      grid-row: 2;
+      font-weight: bold;
+      color: var(--primary);
+      font-size: 1.1rem;
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+    }
+
+    .grid-container {
+      grid-column: 2;
+      grid-row: 2;
+      display: grid;
+      gap: 2px;
+      background-color: #cbd5e1;
+      padding: 2px;
+      border-radius: 4px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    .tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 0.85rem;
+      border-radius: 2px;
+      user-select: none;
+    }
+
+    .tile-a2 { background-color: var(--color-a2); }
+    .tile-a  { background-color: var(--color-a); }
+    .tile-1  { background-color: var(--color-1); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Modelo de Áreas para Factorización</h1>
+    <p class="subtitle">Representación visual de polinomios $a^2 + pa + q$ mediante fichas geométricas</p>
+  </header>
+
+  <div class="container">
+    <!-- Panel de controles -->
+    <div class="card">
+      <div class="form-group">
+        <label>Escribe los coeficientes (enteros positivos):</label>
+        <div class="poly-input">
+          <span>a² +</span>
+          <input type="number" id="input-p" value="5" min="1" step="1">
+          <span>a +</span>
+          <input type="number" id="input-q" value="6" min="1" step="1">
+        </div>
+      </div>
+
+      <button id="btn-factor">Factorizar y Representar</button>
+
+      <div class="tiles-count">
+        <h3>Fichas necesarias:</h3>
+        <div class="tile-badge badge-a2">
+          <span>Cuadrado a² (a × a):</span>
+          <span id="count-a2">1</span>
+        </div>
+        <div class="tile-badge badge-a">
+          <span>Rectángulo a (a × 1):</span>
+          <span id="count-a">5</span>
+        </div>
+        <div class="tile-badge badge-1">
+          <span>Cuadrado 1 (1 × 1):</span>
+          <span id="count-1">6</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de visualización -->
+    <div class="card viewport">
+      <div id="visual-area"></div>
+      <div id="result-message" class="result-message" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Unidades en píxeles para escalar el diagrama visualmente
+    const UNIT_A = 80; // Longitud del lado 'a'
+    const UNIT_1 = 30; // Longitud del lado '1'
+
+    function updateSimulation() {
+      const p = parseInt(document.getElementById('input-p').value) || 0;
+      const q = parseInt(document.getElementById('input-q').value) || 0;
+
+      // Actualizar contadores
+      document.getElementById('count-a2').textContent = '1';
+      document.getElementById('count-a').textContent = p;
+      document.getElementById('count-1').textContent = q;
+
+      const visualArea = document.getElementById('visual-area');
+      const resultMsg = document.getElementById('result-message');
+      
+      visualArea.innerHTML = '';
+      resultMsg.style.display = 'none';
+
+      if (p <= 0 || q <= 0) {
+        showError('Los valores de p y q deben ser enteros positivos mayores a cero.');
+        return;
+      }
+
+      // Buscar dos enteros positivos m y n tales que:
+      // m + n = p  y  m * n = q
+      let factorM = null;
+      let factorN = null;
+
+      for (let i = 1; i <= Math.sqrt(q); i++) {
+        if (q % i === 0) {
+          let pair = q / i;
+          if (i + pair === p) {
+            factorM = i;
+            factorN = pair;
+            break;
+          }
+        }
+      }
+
+      if (factorM !== null && factorN !== null) {
+        // Se encontró factorización válida con enteros positivos
+        renderRectangle(factorM, factorN);
+        showSuccess(`¡Factorización exitosa! a² + ${p}a + ${q} = (a + ${factorM})(a + ${factorN})`);
+      } else {
+        showError(`No se pueden organizar las fichas en un rectángulo exacto.<br>El polinomio <strong>a² + ${p}a + ${q}</strong> no es factorizable sobre los enteros positivos.`);
+      }
+    }
+
+    function renderRectangle(m, n) {
+      const visualArea = document.getElementById('visual-area');
+
+      // Crear estructura contenedor
+      const wrapper = document.createElement('div');
+      wrapper.className = 'rectangle-wrapper';
+
+      // Etiqueta superior (Base: a + n)
+      const labelTop = document.createElement('div');
+      labelTop.className = 'label-top';
+      labelTop.textContent = `Base: a + ${n}`;
+
+      // Etiqueta izquierda (Altura: a + m)
+      const labelLeft = document.createElement('div');
+      labelLeft.className = 'label-left';
+      labelLeft.textContent = `Altura: a + ${m}`;
+
+      // Cuadrícula para las fichas
+      const grid = document.createElement('div');
+      grid.className = 'grid-container';
+      
+      // Definir columnas y filas en CSS Grid
+      // Columna 1: ancho a, Columnas 2..n+1: ancho 1
+      // Fila 1: alto a, Filas 2..m+1: alto 1
+      grid.style.gridTemplateColumns = `${UNIT_A}px repeat(${n}, ${UNIT_1}px)`;
+      grid.style.gridTemplateRows = `${UNIT_A}px repeat(${m}, ${UNIT_1}px)`;
+
+      // 1. Ficha a² (esquina superior izquierda: Fila 1, Col 1)
+      const tileA2 = createTile('a²', UNIT_A, UNIT_A, 'tile-a2');
+      grid.appendChild(tileA2);
+
+      // 2. Fichas de área 'a' horizontales (Fila 1, Cols 2 a n+1)
+      for (let j = 0; j < n; j++) {
+        const tileAHoriz = createTile('a', UNIT_1, UNIT_A, 'tile-a');
+        grid.appendChild(tileAHoriz);
+      }
+
+      // 3. Filas restantes (de 1 a m)
+      for (let i = 0; i < m; i++) {
+        // Ficha de área 'a' vertical (Col 1)
+        const tileAVert = createTile('a', UNIT_A, UNIT_1, 'tile-a');
+        grid.appendChild(tileAVert);
+
+        // n fichas de área '1' (Cols 2 a n+1)
+        for (let j = 0; j < n; j++) {
+          const tile1 = createTile('1', UNIT_1, UNIT_1, 'tile-1');
+          grid.appendChild(tile1);
+        }
+      }
+
+      wrapper.appendChild(labelTop);
+      wrapper.appendChild(labelLeft);
+      wrapper.appendChild(grid);
+      visualArea.appendChild(wrapper);
+    }
+
+    function createTile(text, width, height, className) {
+      const tile = document.createElement('div');
+      tile.className = `tile ${className}`;
+      tile.style.width = `${width}px`;
+      tile.style.height = `${height}px`;
+      tile.textContent = text;
+      return tile;
+    }
+
+    function showSuccess(msg) {
+      const resultMsg = document.getElementById('result-message');
+      resultMsg.className = 'result-message success-msg';
+      resultMsg.innerHTML = msg;
+      resultMsg.style.display = 'block';
+    }
+
+    function showError(msg) {
+      const resultMsg = document.getElementById('result-message');
+      resultMsg.className = 'result-message error-msg';
+      resultMsg.innerHTML = msg;
+      resultMsg.style.display = 'block';
+    }
+
+    // Event Listeners
+    document.getElementById('btn-factor').addEventListener('click', updateSimulation);
+    
+    // Ejecutar la simulación inicialmente con los valores por defecto
+    window.addEventListener('DOMContentLoaded', updateSimulation);
+  </script>
+</body>
+</html>
